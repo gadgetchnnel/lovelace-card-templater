@@ -23,11 +23,11 @@ Download the lovelace-text-input-row.js and put it somewhere under *config folde
 
 ## Options
 
-| Name     | Type   | Optional/Required | Description                                        |
-|----------|--------|-------------------|----------------------------------------------------|
-| type     | string | Required          | custom:card-templater                              |
-| card     | object | Required          | The card to display (see below about templating)   |
-| entities | list   | Rquired           | Entities to watch for changes                      |
+| Name     | Type   | Optional/Required | Description                                                                           |
+|----------|--------|-------------------|---------------------------------------------------------------------------------------|
+| type     | string | Required          | custom:card-templater                                                                 |
+| card     | object | Required          | The card to display (see below about templating)                                      |
+| entities | list   | Required          | Entities to watch for changes (can also be used to template entity states, see below) |
 
 ### Card templating
 
@@ -50,7 +50,8 @@ The **card** option will accept any card configration. Any option in the origina
             {{ state_attr("zone.work","friendly_name") }} - {{
             (distance(states.device_tracker.my_phone, states.zone.work) *
             0.621371) | round(1) }} miles.
-    entities: device_tracker.my_phone
+    entities:
+      - device_tracker.my_phone
 
 This will display an **entities** card showing two zones, with the display names including the distance between a device_tracker entity and the zone lke this:
 
@@ -90,4 +91,31 @@ For complex templates you can create a time sensor like this:
           - 'time'
 
 and then use sensor.time under **entities**
+
+You can also use this to template the state for an entity, so the entity displays other than its actual state. For example:
+
+    type: 'custom:card-templater'
+    card:
+      type: entities
+      show_header_toggle: false
+      columns: 2
+      title: Places
+      entities:
+        - entity: zone.home
+          name_template: >-
+            {{ (distance(states.device_tracker.my_phone, states.zone.home) * 0.621371) | round(1) }} miles away.
+        - entity: zone.work
+          name_template: >-
+            {{(distance(states.device_tracker.my_phone, states.zone.work) * 0.621371) | round(1) }} miles away.
+    entities: 
+      - device_tracker.my_phone
+      - entity: zone.home
+        state_template: '{{ state_attr("zone.home","friendly_name") }}'
+      - entity: zone.work
+        state_template: '{{ state_attr("zone.work","friendly_name") }}'
+    entity: zone.work
+
+will display the states of the zones as their friendly names instead of the actual state of ("zoning") as below:
+
+![StateTemplate](https://user-images.githubusercontent.com/2099542/57028392-e656e900-6c36-11e9-8094-96ff122bb54d.png)
 

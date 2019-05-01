@@ -9,7 +9,7 @@ customElements.whenDefined('card-tools').then(() => {
         this.refresh = true;
         this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
         this.card = cardTools.createCard(this._cardConfig);
-        this.entities = config.entities;
+        this.entities = this.processConfigEntities(config.entities);
       }
       
       createRenderRoot() {
@@ -22,12 +22,43 @@ customElements.whenDefined('card-tools').then(() => {
         `;
       }
 
-      haveEntitiesChanged(){
-        for(const entity of this.entities) {
-          let oldState = this.oldStates[entity];
+      processConfigEntities(entities) {
+        if(!entities) return [];
+        
+        if (!Array.isArray(entities)) {
+          throw new Error("Entities need to be an array");
+        }
+        
+      return entities.map((entityConf, index) => {
+        if (
+              typeof entityConf === "object" &&
+              !Array.isArray(entityConf) &&
+              entityConf.type
+            )
+          {
+              return entityConf;
+          }
+        if (typeof entityConf === "string") {
+              entityConf = { entity: entityConf };
+          } else if (typeof entityConf === "object" && !Array.isArray(entityConf)) {
+              if (!entityConf.entity) {
+                throw new Error(
+                    `Entity object at position ${index} is missing entity field.`
+                );
+              }
+          } else {
+              throw new Error(`Invalid entity specified at position ${index}.`);
+          }
+        return entityConf;
+        });
+    }
+
+    haveEntitiesChanged(){
+        for(const entityConf of this.entities) {
+          let oldState = this.oldStates[entityConf.entity];
           if(oldState == null) oldState = {"state":"undefined"};
 
-          let newState = this._hass.states[entity];
+          let newState = this._hass.states[entityConf.entity];
           if(newState == null) newState = {"state":"undefined"};
 
           if(newState != oldState) return true;
@@ -36,7 +67,21 @@ customElements.whenDefined('card-tools').then(() => {
         return false;
       }
 
-      set hass(hass) {
+     async applyStateTemplates() {
+        if(this._hass) {
+          for(const entityConf of this.entities) {
+            if(entityConf.state_template) {
+              let stateObj = this._hass.states[entityConf.entity];
+              if(stateObj) {
+                stateObj.state = await this.applyTemplate(entityConf.state_template);
+                this._hass.states[entityConf.entity] = stateObj;
+              }
+            }
+          }
+        }
+     }
+
+     set hass(hass) {
         this.oldStates = this._hass != null ? this._hass.states : {};
 
         this._hass = hass;
@@ -49,17 +94,21 @@ customElements.whenDefined('card-tools').then(() => {
             this.getCardConfig(this._config.card, false).then(config =>{
               if(config["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
-                this._cardConfig = config;
-                this.card = cardTools.createCard(this._cardConfig);
-                setInterval(() => {
-                  this.card.hass = this._hass;
-                  this.requestUpdate();
-                }, 100);
+                this.applyStateTemplates().then(() => {
+                  this._cardConfig = config;
+                  this.card = cardTools.createCard(this._cardConfig);
+                  setInterval(() => {
+                    this.card.hass = this._hass;
+                    this.requestUpdate();
+                  }, 100);
+                }); 
               }
               else{
-                this._cardConfig = config;
-                this.card.setConfig(config);
-                this.card.hass = this._hass;
+                this.applyStateTemplates().then(() => {
+                  this._cardConfig = config;
+                  this.card.setConfig(config);
+                  this.card.hass = this._hass;
+                });
               }
             }
             );
