@@ -64,6 +64,14 @@ Some card options can be a list of strings (e.g. the **state_filter** option in 
       - string_template: {{ template which returns "state_one" }}
       - string_template: {{ template which returns "state_two" }}
 
+#### Notes:
+
+It is technically possible to template the card type of the templated_card, e.g. something like this:
+
+    type_template: '{{ "entities" if is_state("input_boolean.show_full", "on").state else "glance" }}
+
+However, this has only been tested with the **entities** and **glance** cards and may not work reliably with other card types.
+
 ### entities
 
 This option is required in order that the template will only be processed when one of the referenced entities changes and is similar to the **entity** option for template sensors. I am investigating if this can be determined from the template but this is difficult to do client-side and so, for now, this option is required.
