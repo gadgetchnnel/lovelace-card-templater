@@ -31,7 +31,7 @@ Download the lovelace-text-input-row.js and put it somewhere under *config folde
 
 ### Card templating
 
-The **card** option will accept any card configration. Any option in the original card which takes a string value can be templated by changing the option name to be ***option name*\_template**. For example, **name** will become **name_template**. Here is an example:
+The **card** option will accept any card configration. Any option in the original card which takes a string value can be templated by changing the option name to be ***option\_name*\_template**. For example, **name** will become **name_template**. Here is an example:
 
     type: 'custom:card-templater'
     card:
@@ -58,15 +58,17 @@ This will display an **entities** card showing two zones, with the display names
 
 #### Templating lists
 
-Some card options can be a list of strings (e.g. the **state_filter** option in the **entity-filter** card). These can still be templated, but need to be done in a different way:
+Some card options can be a list of strings (e.g. the **state_filter** option in the **entity-filter** card). These can still be templated, but need to be done in a different way, by replacing the string with ```string_template: {{ template }}``` as below:
 
     state_filter:
       - 'state_one'
       - 'state_two'
 
+could become
+
     state_filter:
-      - string_template: {{ template which returns "state_one" }}
-      - string_template: {{ template which returns "state_two" }}
+      - string_template: {{ "state_" + "one" }}
+      - string_template: {{ "state_" + "two" }}
 
 #### Notes:
 
