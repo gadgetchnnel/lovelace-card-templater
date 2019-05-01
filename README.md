@@ -56,13 +56,13 @@ This will display an **entities** card showing two zones, with the display names
 
 Some card options can be a list of strings (e.g. the **state_filter** option in the **entity-filter** card). These can still be templated, but need to be done in a different way:
 
-state_filter:
-  - 'state_one'
-  - 'state_two'
+    state_filter:
+      - 'state_one'
+      - 'state_two'
 
-state_filter:
-  - string_template: {{ template which returns "state_one" }}
-  - string_template: {{ template which returns "state_two" }}
+    state_filter:
+      - string_template: {{ template which returns "state_one" }}
+      - string_template: {{ template which returns "state_two" }}
 
 ### entities
 
