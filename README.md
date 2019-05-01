@@ -70,10 +70,10 @@ This option is required in order that the template will only be processed when o
 
 For complex templates you can create a time sensor like this:
 
-  sensor:
-    - platform: time_date
-      display_options:
-        - 'time'
+    sensor:
+      - platform: time_date
+        display_options:
+          - 'time'
 
 and then use sensor.time under **entities**
 
