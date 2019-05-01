@@ -58,7 +58,7 @@ This will display an **entities** card showing two zones, with the display names
 
 #### Templating lists
 
-Some card options can be a list of strings (e.g. the **state_filter** option in the **entity-filter** card). These can still be templated, but need to be done in a different way, by replacing the string with ```string_template: {{ template }}``` as below:
+Some card options can be a list of strings (e.g. the **state_filter** option in the **entity-filter** card). These can still be templated, but need to be done in a different way, by replacing each string with ```string_template: {{ template }}``` as below:
 
     state_filter:
       - 'state_one'
