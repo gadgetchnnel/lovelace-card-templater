@@ -2,14 +2,22 @@ customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
     
       setConfig(config) {
-        if(!config || !config.card || !config.entities)
+        if(!config || !config.card)
           throw new Error("Invalid configuration");
     
         this._config = config;
         this.refresh = true;
         this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
         this.card = cardTools.createCard(this._cardConfig);
-        this.entities = this.processConfigEntities(config.entities);
+        if(config.entities){
+          this.entities = this.processConfigEntities(config.entities);
+        }
+        else{
+          this.entities = [];
+        }
+        this.extractedEntities = false;
+        this.customComponentChecked = false;
+        this.customComponentLoaded = false;
       }
       
       createRenderRoot() {
@@ -63,39 +71,60 @@ customElements.whenDefined('card-tools').then(() => {
 
           if(newState != oldState) return true;
         }
-
         return false;
       }
 
      async applyStateTemplates() {
         if(this._hass) {
-          for(const entityConf of this.entities) {
-            if(entityConf.state_template) {
+          var entities = this.entities;
+          for(const entityConf of entities) {
+            if(entityConf.state)
+            {
               let stateObj = this._hass.states[entityConf.entity];
-              if(stateObj) {
-                stateObj.state = await this.applyTemplate(entityConf.state_template);
-                this._hass.states[entityConf.entity] = stateObj;
+              stateObj.state = entityConf.state;
+              this._hass.states[entityConf.entity] = stateObj;
+            }
+            else if(entityConf.state_template) {
+                let stateObj = this._hass.states[entityConf.entity];
+                if(stateObj) {
+                  stateObj.state = await this.applyTemplate(entityConf.state_template);
+                  this._hass.states[entityConf.entity] = stateObj;
               }
             }
           }
         }
-     }
+      }
 
      set hass(hass) {
         this.oldStates = this._hass != null ? this._hass.states : {};
 
         this._hass = hass;
-        
-        if(this.card)
-        {
-          
-          if(this.haveEntitiesChanged())
+          this.checkCustomComponent().then(loaded => {
+            this.customComponentChecked = true;
+            if(loaded && !this.extractedEntities){
+              this.extractEntities(this._config.card).then(()=>{
+                this.extractedEntities = true;
+              });
+            }
+
+          if(this.card)
           {
-            this.getCardConfig(this._config.card, false).then(config =>{
-              if(config["type"] != this._cardConfig["type"]){
+          let changed = this.haveEntitiesChanged();
+          if(changed || !this.extractedEntities)
+          {
+            console.log("Refreshing");
+            this.getCardConfig(this._config.card).then(config =>{
+              if("cardConfig" in config){
+                var cardConfig = config["cardConfig"];
+              }
+              else{
+                var cardConfig = config;
+              }
+
+              if(cardConfig["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
                 this.applyStateTemplates().then(() => {
-                  this._cardConfig = config;
+                  this._cardConfig = cardConfig;
                   this.card = cardTools.createCard(this._cardConfig);
                   setInterval(() => {
                     this.card.hass = this._hass;
@@ -104,9 +133,9 @@ customElements.whenDefined('card-tools').then(() => {
                 }); 
               }
               else{
-                this.applyStateTemplates().then(() => {
-                  this._cardConfig = config;
-                  this.card.setConfig(config);
+                this.applyStateTemplates(config).then(() => {
+                  this._cardConfig = cardConfig;
+                  this.card.setConfig(cardConfig);
                   this.card.hass = this._hass;
                 });
               }
@@ -117,6 +146,7 @@ customElements.whenDefined('card-tools').then(() => {
             this.card.hass = this._hass;
           }
         }
+          });      
       }
 
       async applyTemplate(template){
@@ -179,11 +209,9 @@ customElements.whenDefined('card-tools').then(() => {
         return cardConfig;
     }
 
-    async getCardConfig(rawConfig){ 
-        var cardConfig = rawConfig instanceof Array ? [] : {};
-        //let editorMode = await this.isEditorMode();
-
-        for (const [original_key, original_value] of Object.entries(rawConfig)) {
+    async getCardConfigLocal(rawConfig){
+      var cardConfig = rawConfig instanceof Array ? [] : {};
+      for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
 
@@ -210,7 +238,7 @@ customElements.whenDefined('card-tools').then(() => {
             if(typeof value === "object"){
                 
               let isArray = (value instanceof Array);  
-              value = await this.getCardConfig(value);
+              value = await this.getCardConfigLocal(value);
               
               if(isArray){
                 let new_value = [];
@@ -231,9 +259,59 @@ customElements.whenDefined('card-tools').then(() => {
               cardConfig[key] = value;
             }
           }
-        return cardConfig;
+
+          return cardConfig;
+    }
+
+    async checkCustomComponent(){
+      if(this.customComponentChecked) return this.customComponentLoaded;
+      try{
+        var result = await this._hass.callApi('get', 'card_templater');
+        this.customComponentLoaded = true;
+      }
+      catch(err){
       }
 
+      return this.customComponentLoaded;
+    }
+
+    async extractEntities(rawConfig){ 
+      try{
+        var templateRequest = {cardConfig: rawConfig, entities: this.entities};
+        var result = await this._hass.callApi('post', 'card_templater/extract_entities', templateRequest);
+        if(result.entity_ids != "*" && result.entity_ids != []){
+          if(!this.entities || this.entities.length == 0){
+            this.entities = this.processConfigEntities(result.entity_ids);
+          }
+        }
+        else if(result.entity_ids == "*" && (!this.entities || this.entities.length == 0)){
+          console.error(result.error);
+        }
+        }
+        catch(err){
+          console.error("Error extracting entities.");
+        }
+    }
+
+    async getCardConfig(rawConfig){ 
+      if(this.customComponentLoaded){
+        try{
+          var templateRequest = {cardConfig: rawConfig, entities: this.entities};
+
+          var result = await this._hass.callApi('post', 'card_templater/process_templates', templateRequest);
+          return result;
+          }
+          catch(err){
+            console.error("Error parsing template.");
+            return "Error!";
+          }
+      }
+      else{
+        console.log("Custom component not loaded. Fallback to local processing.");
+        return await this.getCardConfigLocal(rawConfig);
+      }
+    }
+    
     // Walk the DOM to find element.
     async recursiveQuery(node, elementName) {
       if(node.nodeName == elementName) return node;
