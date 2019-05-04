@@ -27,7 +27,7 @@ Download the lovelace-text-input-row.js and put it somewhere under *config folde
 |----------|--------|-------------------|---------------------------------------------------------------------------------------|
 | type     | string | Required          | custom:card-templater                                                                 |
 | card     | object | Required          | The card to display (see below about templating)                                      |
-| entities | list   | Required          | Entities to watch for changes (can also be used to template entity states, see below) |
+| entities | list   | Optional if using card_templater custom component, Required otherwise          | Entities to watch for changes (can also be used to template entity states, see below) |
 
 ### Card templating
 
