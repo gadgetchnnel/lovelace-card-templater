@@ -18,7 +18,7 @@ This card can either be installed using [custom_updater](https://github.com/cust
 Download the lovelace-text-input-row.js and put it somewhere under *config folder*/www
 
     resources:
-      - url: local/path/to/file/lovelace-card-templater.js?v=0.0.1
+      - url: local/path/to/file/lovelace-card-templater.js?v=0.0.2
         type: js
 
 ## Options
