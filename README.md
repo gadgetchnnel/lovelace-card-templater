@@ -21,13 +21,20 @@ Download the lovelace-text-input-row.js and put it somewhere under *config folde
       - url: local/path/to/file/lovelace-card-templater.js?v=0.0.1
         type: js
 
+## Custom Component
+
+This card works best when the card_templater custom component is also installed, the component does two things:
+
+* Reduces the number of API requests required to template a card
+* Allows the entities which require monitoring to refresh a card to be determined, which avoides the need tto use the **entities** option (except for with complex templates).
+
 ## Options
 
 | Name     | Type   | Optional/Required | Description                                                                           |
 |----------|--------|-------------------|---------------------------------------------------------------------------------------|
 | type     | string | Required          | custom:card-templater                                                                 |
 | card     | object | Required          | The card to display (see below about templating)                                      |
-| entities | list   | Optional if using card_templater custom component, Required otherwise          | Entities to watch for changes (can also be used to template entity states, see below) |
+| entities | list   | Optional          | Entities to watch for changes (can also be used to template entity states, see below) |
 
 ### Card templating
 
@@ -81,9 +88,9 @@ However, this has only been tested with the **entities** and **glance** cards an
 
 ### entities
 
-This option is required in order that the template will only be processed when one of the referenced entities changes and is similar to the **entity** option for template sensors. I am investigating if this can be determined from the template but this is difficult to do client-side and so, for now, this option is required.
+If the custom component is used, it will attempt to determine the entities which need to be monitoried in order to automatically update the card on state changes. If this is not possible (e.g. the template is complex) or the component is not used the **entities** option can be used to indicate which entities should be monitored. If the entities cannot be determined and the **enties** option is not used, the card will still work but will only update if the page is manually refreshed.
 
-For complex templates you can create a time sensor like this:
+As a workaround for complex templates you can create a time sensor like this:
 
     sensor:
       - platform: time_date
