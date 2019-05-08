@@ -1,3 +1,5 @@
+const complexSettings = ['entities', 'state_filter'];
+
 customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
     
@@ -81,8 +83,10 @@ customElements.whenDefined('card-tools').then(() => {
             if(entityConf.state)
             {
               let stateObj = this._hass.states[entityConf.entity];
-              stateObj.state = entityConf.state;
-              this._hass.states[entityConf.entity] = stateObj;
+              if(stateObj) {
+                stateObj.state = entityConf.state;
+                this._hass.states[entityConf.entity] = stateObj;
+              }
             }
             else if(entityConf.state_template) {
                 let stateObj = this._hass.states[entityConf.entity];
@@ -112,10 +116,10 @@ customElements.whenDefined('card-tools').then(() => {
           let changed = this.haveEntitiesChanged();
           if(changed || !this.extractedEntities)
           {
-            console.log("Refreshing");
+            console.info("Refreshing");
             this.getCardConfig(this._config.card).then(config =>{
-              if("cardConfig" in config){
-                var cardConfig = config["cardConfig"];
+              if(this.customComponentLoaded){
+                var cardConfig = config["card"];
               }
               else{
                 var cardConfig = config;
@@ -166,11 +170,13 @@ customElements.whenDefined('card-tools').then(() => {
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
-            
             if(key.endsWith("_template")){
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(key == "entity"){
                   return null;
+                }
+                else if(complexSettings.includes(key)){
+                  value = [];
                 }
                 else if(key == "type"){
                   value = "entities"; // Avoid issues if templating card type
@@ -296,8 +302,7 @@ customElements.whenDefined('card-tools').then(() => {
     async getCardConfig(rawConfig){ 
       if(this.customComponentLoaded){
         try{
-          var templateRequest = {cardConfig: rawConfig, entities: this.entities};
-
+          var templateRequest = {card: rawConfig, entities: this.entities};
           var result = await this._hass.callApi('post', 'card_templater/process_templates', templateRequest);
           return result;
           }
@@ -307,7 +312,7 @@ customElements.whenDefined('card-tools').then(() => {
           }
       }
       else{
-        console.log("Custom component not loaded. Fallback to local processing.");
+        console.info("Custom component not loaded using local processing.");
         return await this.getCardConfigLocal(rawConfig);
       }
     }

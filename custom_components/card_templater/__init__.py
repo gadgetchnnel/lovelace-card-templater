@@ -7,6 +7,7 @@ from homeassistant.const import MATCH_ALL
 _LOGGER = logging.getLogger(__name__)
 
 CARD_TEMPLATER_HTTP_ENDPOINT = '/api/card_templater'
+COMPLEX_SETTINGS = ['entities', 'state_filter']
 
 class CardTemplaterView(http.HomeAssistantView):
     """Expose Card Template status check interface via HTTP POST."""
@@ -34,6 +35,14 @@ class ProcessTemplatesView(http.HomeAssistantView):
     def __init__(self):
         """Initialize."""
     
+    def is_json(self, myjson):
+        try:
+            json_object = json.loads(myjson)
+        except ValueError as e:
+            _LOGGER.error(str(e))
+            return False
+        return True
+
     def getValue(self, key, value, hass):
         if key.endswith("_template"):
             templ = template_helper.Template(value, hass)
@@ -41,8 +50,16 @@ class ProcessTemplatesView(http.HomeAssistantView):
             if new_value == "None" or new_value == "null":
                 if key == "type_template":
                     new_value = "entities"
+                elif key.replace("_template", "") in COMPLEX_SETTINGS:
+                    new_value = []
                 else:
                     new_value = "-"
+            else:
+                if key.replace("_template", "") in COMPLEX_SETTINGS:
+                    if(self.is_json(new_value)):
+                        new_value = json.loads(new_value)
+                    else:
+                        new_value = []
             return new_value
         else:
             if type(value) is list or type(value) is dict:
