@@ -71,6 +71,20 @@ could become
       - string_template: {{ "state_" + "one" }}
       - string_template: {{ "state_" + "two" }}
 
+#### Templating lists, alternative experimental method (since version 0.0.3)
+
+Version 0.0.3 introduced another way of templating list-based properties. These can now be templated via a template which returns valid YAML or JSON, such as this:
+
+type: 'custom:card-templater'
+card:
+  type: entities
+  title: Who's at Home
+  entities_template: >-
+    {{ states.device_tracker | selectattr("state", "equalto",
+    "home") | map(attribute="entity_id") | list | tojson }}
+entities:
+  - sensor.time
+
 #### Notes:
 
 It is technically possible to template the card type of the templated_card, e.g. something like this:
