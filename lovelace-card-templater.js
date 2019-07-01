@@ -20,6 +20,10 @@ customElements.whenDefined('card-tools').then(() => {
         this.extractedEntities = false;
         this.customComponentChecked = false;
         this.customComponentLoaded = false;
+        import("https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.3.0/yaml.js")
+        .then((module) => {
+            this.yaml = window.YAML;
+        });
       }
       
       createRenderRoot() {
@@ -226,6 +230,9 @@ customElements.whenDefined('card-tools').then(() => {
                 if(this._hass && value){
                     value = await this.applyTemplate(value);
                     if(value == 'None') value = null;
+                    if(value != null && complexSettings.includes(key)){
+                      value = this.yaml.parse(value);
+                    }
                 }
                 
                 if(!this._hass || !(value)){
@@ -234,6 +241,10 @@ customElements.whenDefined('card-tools').then(() => {
                   }
                   else if(key == "type"){
                     value = "entities"; // Avoid issues if templating card type
+                  }
+                  else if(complexSettings.includes(key)){
+                    console.log("array");
+                    value = [];
                   }
                   else{
                     value = "-";
@@ -308,6 +319,7 @@ customElements.whenDefined('card-tools').then(() => {
           }
           catch(err){
             console.error("Error parsing template.");
+            console.log(JSON.stringify(templateRequest));
             return "Error!";
           }
       }
