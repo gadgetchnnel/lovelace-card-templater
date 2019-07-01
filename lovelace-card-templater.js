@@ -1,15 +1,27 @@
+const complexSettings = ['entities', 'state_filter'];
+
 customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
     
       setConfig(config) {
-        if(!config || !config.card || !config.entities)
+        if(!config || !config.card)
           throw new Error("Invalid configuration");
     
         this._config = config;
         this.refresh = true;
         this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
         this.card = cardTools.createCard(this._cardConfig);
-        this.entities = this.processConfigEntities(config.entities);
+        if(config.entities){
+          this.entities = this.processConfigEntities(config.entities);
+        }
+        else{
+          this.entities = [];
+        }
+        
+        import("https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.3.0/yaml.js")
+        .then((module) => {
+            this.yaml = window.YAML;
+        });
       }
       
       createRenderRoot() {
@@ -63,7 +75,6 @@ customElements.whenDefined('card-tools').then(() => {
 
           if(newState != oldState) return true;
         }
-
         return false;
       }
 
@@ -142,6 +153,9 @@ customElements.whenDefined('card-tools').then(() => {
                 if(key == "entity"){
                   return null;
                 }
+                else if(complexSettings.includes(key)){
+                  value = [];
+                }
                 else if(key == "type"){
                   value = "entities"; // Avoid issues if templating card type
                 }
@@ -181,7 +195,6 @@ customElements.whenDefined('card-tools').then(() => {
 
     async getCardConfig(rawConfig){ 
         var cardConfig = rawConfig instanceof Array ? [] : {};
-        //let editorMode = await this.isEditorMode();
 
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
@@ -192,6 +205,9 @@ customElements.whenDefined('card-tools').then(() => {
                 if(this._hass && value){
                     value = await this.applyTemplate(value);
                     if(value == 'None') value = null;
+                    if(value != null && complexSettings.includes(key)){
+                      value = (this.yaml) ? this.yaml.parse(value) : null;
+                    }
                 }
                 
                 if(!this._hass || !(value)){
@@ -200,6 +216,9 @@ customElements.whenDefined('card-tools').then(() => {
                   }
                   else if(key == "type"){
                     value = "entities"; // Avoid issues if templating card type
+                  }
+                  else if(complexSettings.includes(key)){
+                    value = [];
                   }
                   else{
                     value = "-";
