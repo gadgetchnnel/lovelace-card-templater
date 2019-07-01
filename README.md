@@ -75,15 +75,15 @@ could become
 
 Version 0.0.3 introduced another way of templating list-based properties. These can now be templated via a template which returns valid YAML or JSON, such as this:
 
-type: 'custom:card-templater'
-card:
-  type: entities
-  title: Who's at Home
-  entities_template: >-
-    {{ states.device_tracker | selectattr("state", "equalto",
-    "home") | map(attribute="entity_id") | list | tojson }}
-entities:
-  - sensor.time
+    type: 'custom:card-templater'
+    card:
+      type: entities
+      title: Who's at Home
+      entities_template: >-
+        {{ states.device_tracker | selectattr("state", "equalto",
+        "home") | map(attribute="entity_id") | list | tojson }}
+    entities:
+      - sensor.time
 
 #### Notes:
 
