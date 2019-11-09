@@ -5,13 +5,10 @@ Custom Lovelace card which allows Jinja2 templates to be applied to other cards
 
 This requires [card-tools](https://github.com/thomasloven/lovelace-card-tools) to be installed, check the link for details on installing this if you don't have it installed.
 
-This card can either be installed using [custom_updater](https://github.com/custom-components/custom_updater) or manually.
+This card can either be installed using [HACS](https://github.com/custom-components/hacs) or manually.
 
-### With custom_updater
-
-    resources:
-      - url: /customcards/github/gadgetchnnel/lovelace-card-templater.js?track=true
-        type: js
+### With HACS
+Search for "Lovelace Card Templater" in the store and follow the instructions
 
 ### Manually
 
