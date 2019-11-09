@@ -1,4 +1,5 @@
 const complexSettings = ['entities', 'state_filter'];
+const entityCards = ['entities', 'glance'];
 
 customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
@@ -9,14 +10,17 @@ customElements.whenDefined('card-tools').then(() => {
     
         this._config = config;
         this.refresh = true;
-        this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
-        this.card = cardTools.createCard(this._cardConfig);
+        
         if(config.entities){
           this.entities = this.processConfigEntities(config.entities);
         }
         else{
           this.entities = [];
         }
+        
+        this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
+        this.card = cardTools.createCard(this._cardConfig);
+        console.log("Config", config);
         
         import("https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.3.0/yaml.js")
         .then((module) => {
@@ -77,15 +81,27 @@ customElements.whenDefined('card-tools').then(() => {
         }
         return false;
       }
-
+	
+	 getMockedState(stateObj, state){
+  		var newStateObj = {};
+  		Object.assign(newStateObj, stateObj);
+  		newStateObj.attributes = {};
+  		Object.assign(newStateObj.attributes, stateObj.attributes);
+  		
+  		newStateObj.state = state;
+  		
+  		return newStateObj;
+  	}
+  
      async applyStateTemplates() {
-        if(this._hass) {
+        if(this._mockHass) {
           for(const entityConf of this.entities) {
             if(entityConf.state_template) {
               let stateObj = this._hass.states[entityConf.entity];
               if(stateObj) {
-                stateObj.state = await this.applyTemplate(entityConf.state_template);
-                this._hass.states[entityConf.entity] = stateObj;
+              	let state = await this.applyTemplate(entityConf.state_template);
+              	let mockState = this.getMockedState(stateObj, state);
+                this._mockHass.states[entityConf.entity] = mockState;
               }
             }
           }
@@ -96,20 +112,31 @@ customElements.whenDefined('card-tools').then(() => {
         this.oldStates = this._hass != null ? this._hass.states : {};
 
         this._hass = hass;
+        let mockedStates = this._mockHass ? this._mockHass.states : [];
         
+        this._mockHass = {};
+        Object.assign(this._mockHass, hass);
+        this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
         if(this.card)
         {
           
           if(this.haveEntitiesChanged())
           {
             this.getCardConfig(this._config.card, false).then(config =>{
+              console.log("Updated Config", config);
               if(config["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
                 this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
                   this.card = cardTools.createCard(this._cardConfig);
                   setInterval(() => {
-                    this.card.hass = this._hass;
+                  	if(this.card.state_templatable){
+                  		this.card.hass = this._hass;
+            	    	this.card.templated_hass = this._mockHass;
+                  	}
+                    else{
+                    	this.card.hass = this._mockHass;
+                    }
                     this.requestUpdate();
                   }, 100);
                 }); 
@@ -118,14 +145,28 @@ customElements.whenDefined('card-tools').then(() => {
                 this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
                   this.card.setConfig(config);
-                  this.card.hass = this._hass;
+                  if(this.card.state_templatable){
+                  	this.card.hass = this._hass;
+            	    this.card.templated_hass = this._mockHass;
+                  }
+                  else{
+                    this.card.hass = this._mockHass;
+                  }
+                  this.requestUpdate();
                 });
               }
             }
             );
           }
           else{
-            this.card.hass = this._hass;
+          	this._mockHass.states = mockedStates;
+            if(this.card.state_templatable){
+                this.card.hass = this._hass;
+            	this.card.templated_hass = this._mockHass;
+            }
+            else{
+                this.card.hass = this._mockHass;
+            }
           }
         }
       }
@@ -163,7 +204,6 @@ customElements.whenDefined('card-tools').then(() => {
                   value = "-";
                 }
             }
-            
             if(typeof value === "object"){
               let isArray = (value instanceof Array);  
               value = this.getCardConfigWithoutTemplates(value);
@@ -190,6 +230,9 @@ customElements.whenDefined('card-tools').then(() => {
               cardConfig[key] = value;
             }
           }
+        
+        if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        
         return cardConfig;
     }
 
@@ -250,27 +293,11 @@ customElements.whenDefined('card-tools').then(() => {
               cardConfig[key] = value;
             }
           }
+        
+        if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        
         return cardConfig;
       }
-
-    // Walk the DOM to find element.
-    async recursiveQuery(node, elementName) {
-      if(node.nodeName == elementName) return node;
-      
-      if (node.shadowRoot) {
-        let child = await this.recursiveQuery(node.shadowRoot, elementName);
-        if (child) return child;
-      }
-
-      node = node.firstChild;
-      while (node) {
-        let child = await this.recursiveQuery(node, elementName);
-        if (child) return child;
-        node = node.nextSibling;
-      }
-
-      return null;
-     }
     }
     
     customElements.define('card-templater', CardTemplater);
