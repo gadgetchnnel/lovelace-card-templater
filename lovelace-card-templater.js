@@ -20,7 +20,6 @@ customElements.whenDefined('card-tools').then(() => {
         
         this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
         this.card = cardTools.createCard(this._cardConfig);
-        console.log("Config", config);
         
         import("https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.3.0/yaml.js")
         .then((module) => {
@@ -123,7 +122,6 @@ customElements.whenDefined('card-tools').then(() => {
           if(this.haveEntitiesChanged())
           {
             this.getCardConfig(this._config.card, false).then(config =>{
-              console.log("Updated Config", config);
               if(config["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
                 this.applyStateTemplates().then(() => {
