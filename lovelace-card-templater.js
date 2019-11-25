@@ -26,7 +26,7 @@ customElements.whenDefined('card-tools').then(() => {
             this.yaml = window.YAML;
         });
       }
-      
+       
       createRenderRoot() {
         return this;
       }
@@ -81,12 +81,14 @@ customElements.whenDefined('card-tools').then(() => {
         return false;
       }
 	
-	 getMockedState(stateObj, state){
+	 getMockedState(stateObj, state, attributes){
   		var newStateObj = {};
   		Object.assign(newStateObj, stateObj);
   		newStateObj.attributes = {};
   		Object.assign(newStateObj.attributes, stateObj.attributes);
-  		
+  		if(attributes) {
+  			Object.assign(newStateObj.attributes, attributes);
+  		}
   		newStateObj.state = state;
   		
   		return newStateObj;
@@ -99,7 +101,8 @@ customElements.whenDefined('card-tools').then(() => {
               let stateObj = this._hass.states[entityConf.entity];
               if(stateObj) {
               	let state = await this.applyTemplate(entityConf.state_template);
-              	let mockState = this.getMockedState(stateObj, state);
+              	let attributes = entityConf.attributes ? await this.getCardConfig(entityConf.attributes) : null;
+              	let mockState = this.getMockedState(stateObj, state, attributes);
                 this._mockHass.states[entityConf.entity] = mockState;
               }
             }
