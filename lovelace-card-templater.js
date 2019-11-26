@@ -86,10 +86,14 @@ customElements.whenDefined('card-tools').then(() => {
   		Object.assign(newStateObj, stateObj);
   		newStateObj.attributes = {};
   		Object.assign(newStateObj.attributes, stateObj.attributes);
+  		
+  		if(state) {
+  			newStateObj.state = state;
+  		}
+  		
   		if(attributes) {
   			Object.assign(newStateObj.attributes, attributes);
   		}
-  		newStateObj.state = state;
   		
   		return newStateObj;
   	}
@@ -97,10 +101,10 @@ customElements.whenDefined('card-tools').then(() => {
      async applyStateTemplates() {
         if(this._mockHass) {
           for(const entityConf of this.entities) {
-            if(entityConf.state_template) {
+            if(entityConf.state_template || entityConf.attributes) {
               let stateObj = this._hass.states[entityConf.entity];
               if(stateObj) {
-              	let state = await this.applyTemplate(entityConf.state_template);
+              	let state = entityConf.state_template ? await this.applyTemplate(entityConf.state_template) : null;
               	let attributes = entityConf.attributes ? await this.getCardConfig(entityConf.attributes) : null;
               	let mockState = this.getMockedState(stateObj, state, attributes);
                 this._mockHass.states[entityConf.entity] = mockState;
