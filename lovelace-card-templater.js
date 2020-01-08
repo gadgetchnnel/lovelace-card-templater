@@ -128,7 +128,7 @@ customElements.whenDefined('card-tools').then(() => {
           
           if(this.haveEntitiesChanged())
           {
-            this.getCardConfig(this._config.card, false).then(config =>{
+        	this.getCardConfig(this._config.card).then(config =>{
               if(config["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
                 this.applyStateTemplates().then(() => {
@@ -187,7 +187,7 @@ customElements.whenDefined('card-tools').then(() => {
         }
       }
 
-      getCardConfigWithoutTemplates(rawConfig){
+      getCardConfigWithoutTemplates(rawConfig, topLevel = true){
         var cardConfig = rawConfig instanceof Array ? [] : {};
 
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
@@ -211,7 +211,7 @@ customElements.whenDefined('card-tools').then(() => {
             }
             if(typeof value === "object"){
               let isArray = (value instanceof Array);  
-              value = this.getCardConfigWithoutTemplates(value);
+              value = this.getCardConfigWithoutTemplates(value, false);
               
               if(isArray){
                 let new_value = [];
@@ -236,12 +236,12 @@ customElements.whenDefined('card-tools').then(() => {
             }
           }
         
-        if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        if(topLevel && cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
         
         return cardConfig;
     }
 
-    async getCardConfig(rawConfig){ 
+    async getCardConfig(rawConfig, topLevel = true){ 
         var cardConfig = rawConfig instanceof Array ? [] : {};
 
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
@@ -277,7 +277,7 @@ customElements.whenDefined('card-tools').then(() => {
             if(typeof value === "object"){
                 
               let isArray = (value instanceof Array);  
-              value = await this.getCardConfig(value);
+              value = await this.getCardConfig(value, false);
               
               if(isArray){
                 let new_value = [];
@@ -299,7 +299,7 @@ customElements.whenDefined('card-tools').then(() => {
             }
           }
         
-        if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        if(topLevel && cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
         
         return cardConfig;
       }
