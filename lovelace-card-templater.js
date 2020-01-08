@@ -123,6 +123,18 @@ customElements.whenDefined('card-tools').then(() => {
         this._mockHass = {};
         Object.assign(this._mockHass, hass);
         this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
+        console.log(this._hass);
+    	this._templateVariables = { 
+    		user: {
+    			name: this._hass.user.name, 
+				is_admin: this._hass.user.is_admin,
+				is_owner: this._hass.user.is_owner
+			},
+			page: {
+				path: location.pathname				
+			}
+		};
+		
         if(this.card)
         {
           
@@ -178,7 +190,7 @@ customElements.whenDefined('card-tools').then(() => {
 
       async applyTemplate(template){
         try{
-        var result = await this._hass.callApi('post', 'template', { template: template });
+        var result = await this._hass.callApi('post', 'template', { template: template, variables: this._templateVariables });
         return result;
         }
         catch(err){
@@ -243,7 +255,6 @@ customElements.whenDefined('card-tools').then(() => {
 
     async getCardConfig(rawConfig, topLevel = true){ 
         var cardConfig = rawConfig instanceof Array ? [] : {};
-
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
