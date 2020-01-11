@@ -171,5 +171,5 @@ This can be done with or without the **state_template** being defined, so you ca
       content_template >
         ## Hello {{ user.name }}
         This card is on the page {{ page.path }}
-      entities:
-        - entity: sensor.time
+    entities:
+      - entity: sensor.time
