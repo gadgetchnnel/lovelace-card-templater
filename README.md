@@ -130,3 +130,46 @@ will display the states of the zones as their friendly names instead of the actu
 
 ![StateTemplate](https://user-images.githubusercontent.com/2099542/57028392-e656e900-6c36-11e9-8094-96ff122bb54d.png)
 
+Attributes of entities can also be templated like this:
+
+    type: 'custom:card-templater'
+    card:
+      ...
+    entities:
+      - entity: sensor.my_sensor
+         state_template: >
+           {{ "One" if states.sensor.my_sensor.state == "1" else "Not One" }}
+         attributes:
+           unit_of_measurement_template: >
+             {{ states.sensor.my_sensor_uom.state }}
+             
+This can be done with or without the **state_template** being defined, so you can do this:
+
+type: 'custom:card-templater'
+    card:
+      ...
+    entities:
+      - entity: sensor.my_sensor
+         attributes:
+           unit_of_measurement_template: >
+             {{ states.sensor.my_sensor_uom.state }}
+             
+### Variables (intorudced in 0.0.6)
+
+0.0.6 added several variables, which are passed to the templating engine so you can use them in the templates
+
+* user.name - the name of the current user
+* user.is_admin - whether the current user is an admin
+* user.is_owner - whether the current user is the owner
+* page.path - the path name of the current page (e.g. /lovelace/home)
+
+#### Example
+
+    type: 'custom:card-templater'
+        card:
+          type: markdown
+          content_template >
+            ## Hello {{ user.name }}
+            This card is on the page {{ page.path }}
+        entities:
+          - entity: sensor.time
