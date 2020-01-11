@@ -146,13 +146,13 @@ Attributes of entities can also be templated like this:
 This can be done with or without the **state_template** being defined, so you can do this:
 
     type: 'custom:card-templater'
-        card:
-          ...
-        entities:
-          - entity: sensor.my_sensor
-            attributes:
-              unit_of_measurement_template: >
-                {{ states.sensor.my_sensor_uom.state }}
+    card:
+      ...
+    entities:
+      - entity: sensor.my_sensor
+        attributes:
+         unit_of_measurement_template: >
+           {{ states.sensor.my_sensor_uom.state }}
              
 ### Variables (intorudced in 0.0.6)
 
@@ -166,10 +166,10 @@ This can be done with or without the **state_template** being defined, so you ca
 #### Example
 
     type: 'custom:card-templater'
-        card:
-          type: markdown
-          content_template >
-            ## Hello {{ user.name }}
-            This card is on the page {{ page.path }}
-        entities:
-          - entity: sensor.time
+    card:
+      type: markdown
+      content_template >
+        ## Hello {{ user.name }}
+        This card is on the page {{ page.path }}
+      entities:
+        - entity: sensor.time
