@@ -150,9 +150,9 @@ This can be done with or without the **state_template** being defined, so you ca
           ...
         entities:
           - entity: sensor.my_sensor
-             attributes:
-               unit_of_measurement_template: >
-                 {{ states.sensor.my_sensor_uom.state }}
+            attributes:
+              unit_of_measurement_template: >
+                {{ states.sensor.my_sensor_uom.state }}
              
 ### Variables (intorudced in 0.0.6)
 
