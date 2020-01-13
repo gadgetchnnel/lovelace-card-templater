@@ -123,7 +123,6 @@ customElements.whenDefined('card-tools').then(() => {
         this._mockHass = {};
         Object.assign(this._mockHass, hass);
         this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
-        console.log(this._hass);
     	this._templateVariables = { 
     		user: {
     			name: this._hass.user.name, 
