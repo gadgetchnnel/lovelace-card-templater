@@ -130,13 +130,13 @@ customElements.whenDefined('card-tools').then(() => {
 				is_owner: this._hass.user.is_owner
 			},
 			page: {
-				path: location.pathname				
+				...location,
+				path: location.pathname			
 			}
 		};
 		
         if(this.card)
-        {
-          
+        { 
           if(this.haveEntitiesChanged())
           {
         	this.getCardConfig(this._config.card).then(config =>{
@@ -187,13 +187,36 @@ customElements.whenDefined('card-tools').then(() => {
         }
       }
 
+	  // Promisified wrapper around subscribeRenderTemplate to allow this to be called as an async function
+	  parseTemplate(template, variables){
+ 		return new Promise((resolve, reject) => {
+ 			let unsubRenderTemplate = cardTools.subscribeRenderTemplate(null,
+       		async (result) => {
+         		resolve(result);
+       		},
+       		{template: template, variables: variables, 
+       		entity_ids: []});
+       		let unsub = null;
+       		
+       		// Catch any errors and unsubscribe
+       		(async () => {
+      			try {
+        				unsub = await unsubRenderTemplate;
+        				await unsub();
+      			} catch (e) {
+        			reject(e.message);
+      			}
+    		})();
+ 		});
+	  }
+	  
       async applyTemplate(template){
         try{
-        var result = await this._hass.callApi('post', 'template', { template: template, variables: this._templateVariables });
-        return result;
+        	var result = await this.parseTemplate(template, this._templateVariables);
+        	return result;
         }
         catch(err){
-          console.error("Error parsing template.");
+          console.error("Error parsing template.", err);
           return "Error!";
         }
       }
