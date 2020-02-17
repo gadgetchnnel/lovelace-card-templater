@@ -1,6 +1,14 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
+const TEMPLATER_CARD_VERSION = "0.0.8b2";
+
+console.info(
+  `%c  CARD-TEMPLATER  \n%c Version ${TEMPLATER_CARD_VERSION}  `,
+  'color: yellow; font-weight: bold; background: navy',
+  'color: white; font-weight: bold; background: black',
+);
+
 customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
     
