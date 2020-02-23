@@ -1,7 +1,7 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
-const TEMPLATER_CARD_VERSION = "0.0.8b2";
+const TEMPLATER_CARD_VERSION = "0.0.8b3";
 
 console.info(
   `%c  CARD-TEMPLATER  \n%c Version ${TEMPLATER_CARD_VERSION}  `,
@@ -140,7 +140,8 @@ customElements.whenDefined('card-tools').then(() => {
 			page: {
 				...location,
 				path: location.pathname			
-			}
+			},
+			theme: this._hass.selected_theme ? this._hass.selected_theme : this._hass.themes.default_theme
 		};
 		
         if(this.card)
@@ -154,13 +155,7 @@ customElements.whenDefined('card-tools').then(() => {
                   this._cardConfig = config;
                   this.card = cardTools.createCard(this._cardConfig);
                   setInterval(() => {
-                  	if(this.card.state_templatable){
-                  		this.card.hass = this._hass;
-            	    	this.card.templated_hass = this._mockHass;
-                  	}
-                    else{
-                    	this.card.hass = this._mockHass;
-                    }
+                  	this.card.hass = this._mockHass;
                     this.requestUpdate();
                   }, 100);
                 }); 
@@ -169,13 +164,7 @@ customElements.whenDefined('card-tools').then(() => {
                 this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
                   this.card.setConfig(config);
-                  if(this.card.state_templatable){
-                  	this.card.hass = this._hass;
-            	    this.card.templated_hass = this._mockHass;
-                  }
-                  else{
-                    this.card.hass = this._mockHass;
-                  }
+                  this.card.hass = this._mockHass;
                   this.requestUpdate();
                 });
               }
@@ -183,14 +172,10 @@ customElements.whenDefined('card-tools').then(() => {
             );
           }
           else{
-          	this._mockHass.states = mockedStates;
-            if(this.card.state_templatable){
-                this.card.hass = this._hass;
-            	this.card.templated_hass = this._mockHass;
-            }
-            else{
-                this.card.hass = this._mockHass;
-            }
+            // Combine previously mocked states with any new state updates
+            this._mockHass.states = { ...this.mockedStates, ...this._mockHass.states };
+            this.card.hass = this._mockHass;
+            this.requestUpdate();
           }
         }
       }
