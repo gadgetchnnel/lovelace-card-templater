@@ -1,7 +1,7 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
-const TEMPLATER_CARD_VERSION = "0.0.8b3";
+const TEMPLATER_CARD_VERSION = "0.0.8b4";
 
 console.info(
   `%c  CARD-TEMPLATER  \n%c Version ${TEMPLATER_CARD_VERSION}  `,
@@ -173,7 +173,17 @@ customElements.whenDefined('card-tools').then(() => {
           }
           else{
             // Combine previously mocked states with any new state updates
-            this._mockHass.states = { ...this.mockedStates, ...this._mockHass.states };
+            
+            var mockedKeys = Object.keys(mockedStates);
+            
+            const newStates = Object.keys(this._mockHass.states)
+  				.filter(key => !mockedKeys.includes(key))
+  				.reduce((obj, key) => {
+    				obj[key] = raw[key];
+    				return obj;
+  				}, {});
+  			
+            this._mockHass.states = { ...mockedStates,  ...newStates};
             this.card.hass = this._mockHass;
             this.requestUpdate();
           }
