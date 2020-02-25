@@ -1,7 +1,7 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
-const TEMPLATER_CARD_VERSION = "0.0.8b4";
+const TEMPLATER_CARD_VERSION = "0.0.8b3";
 
 console.info(
   `%c  CARD-TEMPLATER  \n%c Version ${TEMPLATER_CARD_VERSION}  `,
@@ -13,21 +13,34 @@ customElements.whenDefined('card-tools').then(() => {
     class CardTemplater extends cardTools.LitElement {
     
       setConfig(config) {
-        if(!config || !config.card)
+        if(!config || (!config.card && !config.entity_row))
           throw new Error("Invalid configuration");
     
         this._config = config;
         this.refresh = true;
         
+        if(config.entity) this.entity = config.entity;
+        
         if(config.entities){
           this.entities = this.processConfigEntities(config.entities);
+        }
+        else if(config.entity){
+        	this.entities = this.processConfigEntities([config.entity]);
         }
         else{
           this.entities = [];
         }
         
-        this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
-        this.card = cardTools.createCard(this._cardConfig);
+        this.isEntityRow = !!config.entity_row;
+        
+        if(config.card){
+        	this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
+        	this.card = cardTools.createCard(this._cardConfig);
+        }
+        else{
+        	this._cardConfig = this.getCardConfigWithoutTemplates(config.entity_row);
+        	this.card = cardTools.createEntityRow(this._cardConfig);
+        }
         
         import("https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.3.0/yaml.js")
         .then((module) => {
@@ -148,7 +161,7 @@ customElements.whenDefined('card-tools').then(() => {
         { 
           if(this.haveEntitiesChanged())
           {
-        	this.getCardConfig(this._config.card).then(config =>{
+        	this.getCardConfig(this._config.card ? this._config.card : this._config.entity_row).then(config =>{
               if(config["type"] != this._cardConfig["type"]){
                 // If card type has been changed by template, recreate it.
                 this.applyStateTemplates().then(() => {
@@ -179,7 +192,7 @@ customElements.whenDefined('card-tools').then(() => {
             const newStates = Object.keys(this._mockHass.states)
   				.filter(key => !mockedKeys.includes(key))
   				.reduce((obj, key) => {
-    				obj[key] = raw[key];
+    				obj[key] = this._mockHass.states[key];
     				return obj;
   				}, {});
   			
@@ -273,7 +286,14 @@ customElements.whenDefined('card-tools').then(() => {
             }
           }
         
-        if(topLevel && cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        if(topLevel){
+        	if(this.isEntityRow){
+        		if(!cardConfig.entity) cardConfig.entity = this.entity;
+        	}
+        	else if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) {
+        		cardConfig.entities = this.entities;
+        	}
+        }
         
         return cardConfig;
     }
@@ -335,7 +355,14 @@ customElements.whenDefined('card-tools').then(() => {
             }
           }
         
-        if(topLevel && cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) cardConfig.entities = this.entities;
+        if(topLevel){
+        	if(this.isEntityRow){
+        		if(!cardConfig.entity) cardConfig.entity = this.entity;
+        	}
+        	else if(cardConfig.type && entityCards.includes(cardConfig.type) && !cardConfig.entities) {
+        		cardConfig.entities = this.entities;
+        	}
+        }
         
         return cardConfig;
       }
