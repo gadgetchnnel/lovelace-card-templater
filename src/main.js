@@ -258,6 +258,10 @@ console.info(
                   value = "-";
                 }
             }
+            else if(key.endsWith("_template!")){
+                key = key.replace(/^(.*_template)!$/,"$1");
+            }
+            
             if(typeof value === "object"){
               let isArray = (value instanceof Array);  
               value = this.getCardConfigWithoutTemplates(value, false);
@@ -302,7 +306,7 @@ console.info(
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
-
+            
             if(key.endsWith("_template")){
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(this._hass && value){
@@ -328,7 +332,10 @@ console.info(
                   }
                 }
             }
-
+			else if(key.endsWith("_template!")){
+                key = key.replace(/^(.*_template)!$/,"$1");
+            }
+            
             if(typeof value === "object"){
                 
               let isArray = (value instanceof Array);  
