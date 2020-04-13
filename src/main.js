@@ -153,7 +153,7 @@ console.info(
 				...location,
 				path: location.pathname			
 			},
-			theme: this._hass.selected_theme ? this._hass.selected_theme : this._hass.themes.default_theme
+			theme: this._hass.selectedTheme ? this._hass.selectedTheme : this._hass.themes.default_theme
 		};
 		
         if(this.card)
@@ -311,12 +311,23 @@ console.info(
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(this._hass && value){
                     value = await this.applyTemplate(value);
-                    if(value == 'None') value = null;
-                    if(value != null && complexSettings.includes(key)){
-                      value = (this.yaml) ? this.yaml.parse(value) : null;
+                    if(value == 'None'){ 
+                    	value = null;
                     }
+                    
+                    if(value != null){
+                    	
+                    	let lowerCaseValue = value.toLowerCase();
+                    	if(lowerCaseValue == "true" || lowerCaseValue == "false"){ // Special processing for "true"/"false" values
+                    		value = (lowerCaseValue == "true");
+                    	}
+                    	else if(complexSettings.includes(key))
+                    	{
+                    		value = (this.yaml) ? this.yaml.parse(value) : null;
+                    	}
+                    }                  
                 }
-                
+                              
                 if(!this._hass || !(value)){
                   if(key == "entity"){
                     return null;
