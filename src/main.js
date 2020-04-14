@@ -134,9 +134,7 @@ console.info(
         }
      }
 
-	 set isPanel(isPanel){
-	 	console.log("Panel", isPanel);
-	 	
+	 set isPanel(isPanel){ 	
 	 	this._isPanel = isPanel;
 	 }
 	 
