@@ -153,7 +153,11 @@ This can be done with or without the **state_template** being defined, so you ca
         attributes:
          unit_of_measurement_template: >
            {{ states.sensor.my_sensor_uom.state }}
-             
+
+### Excluding a property with a name ending with \_template property from being templated
+
+Sometimes you may want to template a card which takes properties ending with \_template (e.g. the **content_template** optionin [lovelace-home-feed-card](https://github.com/gadgetchnnel/lovelace-home-feed-card)) and you don't want these to be handled by card-templater. This can be done by adding  **!**  to the end of the property (e.g. `content_template!: {{state}}`).
+
 ### Variables
 
 The following variables are passed to the templating engine so you can use them in the templates
