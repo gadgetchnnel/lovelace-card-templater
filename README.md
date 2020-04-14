@@ -154,14 +154,20 @@ This can be done with or without the **state_template** being defined, so you ca
          unit_of_measurement_template: >
            {{ states.sensor.my_sensor_uom.state }}
              
-### Variables (intorudced in 0.0.6)
+### Variables
 
-0.0.6 added several variables, which are passed to the templating engine so you can use them in the templates
+The following variables are passed to the templating engine so you can use them in the templates
 
 * user.name - the name of the current user
 * user.is_admin - whether the current user is an admin
 * user.is_owner - whether the current user is the owner
-* page.path - the path name of the current page (e.g. /lovelace/home)
+* page - this is the Javascript **location** object for the current page and so can be used as follows:
+  * page.pathname - the path name of the current page (e.g. /lovelace/home)
+  * page.href - the full url of the current page
+  * page.protocol - the protocol (http/https) of the current page
+  * page.host - the hostname of the current page
+* page.path - this is an alias for page.pathname above for backwards compatibility
+* theme - the name of the currently selected theme
 
 #### Example
 
