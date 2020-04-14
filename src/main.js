@@ -3,7 +3,7 @@ const entityCards = ['entities', 'glance'];
 
 const TEMPLATER_CARD_VERSION = "0.0.8";
 
-import { LitElement, html } from "card-tools/src/lit-element";
+import { LitElement, html, css } from "card-tools/src/lit-element";
 import { createCard, createEntityRow } from "card-tools/src/lovelace-element";
 import { subscribeRenderTemplate } from "card-tools/src/templates";
 
@@ -53,7 +53,7 @@ console.info(
 
       render() {
         return html`
-          <div id="root">${this.card}</div>
+          ${this.card}
         `;
       }
 
@@ -134,6 +134,12 @@ console.info(
         }
      }
 
+	 set isPanel(isPanel){
+	 	console.log("Panel", isPanel);
+	 	
+	 	this._isPanel = isPanel;
+	 }
+	 
      set hass(hass) {
         this.oldStates = this._hass != null ? this._hass.states : {};
 
@@ -167,6 +173,7 @@ console.info(
                   this._cardConfig = config;
                   this.card = createCard(this._cardConfig);
                   setInterval(() => {
+                  	this.card.isPanel = (this._isPanel == true);
                   	this.card.hass = this._mockHass;
                     this.requestUpdate();
                   }, 100);
@@ -176,6 +183,7 @@ console.info(
                 this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
                   this.card.setConfig(config);
+                  this.card.isPanel = (this._isPanel == true);
                   this.card.hass = this._mockHass;
                   this.requestUpdate();
                 });
@@ -196,6 +204,7 @@ console.info(
   				}, {});
   			
             this._mockHass.states = { ...mockedStates,  ...newStates};
+            this.card.isPanel = (this._isPanel == true);
             this.card.hass = this._mockHass;
             this.requestUpdate();
           }
