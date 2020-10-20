@@ -331,7 +331,10 @@ console.info(
                     	else if(complexSettings.includes(key))
                     	{
                     		value = (this.yaml) ? this.yaml.parse(value) : null;
-                    	}
+                      } else if(/^[-]?\d+(\.\d+)?(e-?\d+)?$/.test(value)) { // Special processing for numbers
+                        value = parseFloat(value);
+                      }
+                      
                     }                  
                 }
                               
