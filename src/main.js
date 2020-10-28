@@ -318,7 +318,7 @@ console.info(
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(this._hass && value){
                     value = await this.applyTemplate(value);
-                    if(value == 'None'){ 
+                    if(value == 'null' || value == 'None'){ 
                     	value = null;
                     }
                     
