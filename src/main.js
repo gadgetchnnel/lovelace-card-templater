@@ -165,29 +165,16 @@ console.info(
           if(this.haveEntitiesChanged())
           {
         	this.getCardConfig(this._config.card ? this._config.card : this._config.entity_row).then(config =>{
-              if(config["type"] != this._cardConfig["type"]){
-                // If card type has been changed by template, recreate it.
-                this.applyStateTemplates().then(() => {
+              this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
                   this.card = createCard(this._cardConfig);
-                  setInterval(() => {
+                  setTimeout(() => {
                   	this.card.isPanel = (this._isPanel == true);
                   	this.card.hass = this._mockHass;
                     this.requestUpdate();
                   }, 100);
-                }); 
-              }
-              else{
-                this.applyStateTemplates().then(() => {
-                  this._cardConfig = config;
-                  this.card.setConfig(config);
-                  this.card.isPanel = (this._isPanel == true);
-                  this.card.hass = this._mockHass;
-                  this.requestUpdate();
                 });
-              }
-            }
-            );
+            });
           }
           else{
             // Combine previously mocked states with any new state updates
@@ -239,6 +226,7 @@ console.info(
         }
         catch(err){
           console.error("Error parsing template.", err);
+          console.log("Template", template);
           return "Error!";
         }
       }
