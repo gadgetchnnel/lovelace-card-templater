@@ -204,7 +204,7 @@ console.info(
          		resolve(result);
        		},
        		{template: template, variables: variables, 
-       		entity_ids: []});
+       		entity_ids: []}, false);
        		let unsub = null;
        		
        		// Catch any errors and unsubscribe
@@ -310,8 +310,8 @@ console.info(
                     	value = null;
                     }
                     
-                    if(value != null){
-                    	
+                    if(value != null && (typeof value === "string" || value instanceof String)){
+                    	// Special processing for string types (when using legacy templates)               	
                     	let lowerCaseValue = value.toLowerCase();
                     	if(lowerCaseValue == "true" || lowerCaseValue == "false"){ // Special processing for "true"/"false" values
                     		value = (lowerCaseValue == "true");
@@ -319,14 +319,13 @@ console.info(
                     	else if(complexSettings.includes(key))
                     	{
                     		value = (this.yaml) ? this.yaml.parse(value) : null;
-                      } else if(/^[-]?\d+(\.\d+)?(e-?\d+)?$/.test(value)) { // Special processing for numbers
-                        value = parseFloat(value);
-                      }
-                      
+                      	} else if(/^[-]?\d+(\.\d+)?(e-?\d+)?$/.test(value)) { // Special processing for numbers
+                        	value = parseFloat(value);
+                      	}
                     }                  
                 }
-                              
-                if(!this._hass || !(value)){
+                          
+                if(!this._hass || (typeof value === 'undefined' || value === null)){
                   if(key == "entity"){
                     return null;
                   }
