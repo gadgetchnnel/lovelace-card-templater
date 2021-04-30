@@ -178,7 +178,7 @@ The following variables are passed to the templating engine so you can use them 
     type: 'custom:card-templater'
     card:
       type: markdown
-      content_template >
+      content_template: >
         ## Hello {{ user.name }}
         This card is on the page {{ page.path }}
     entities:
