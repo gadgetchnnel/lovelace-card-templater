@@ -3,7 +3,7 @@ const entityCards = ['entities', 'glance'];
 
 const TEMPLATER_CARD_VERSION = "0.0.9";
 
-import { LitElement, html, css } from "card-tools/src/lit-element";
+import { LitElement, html, css } from "lit-element";
 import { createCard, createEntityRow } from "card-tools/src/lovelace-element";
 import { subscribeRenderTemplate } from "card-tools/src/templates";
 
