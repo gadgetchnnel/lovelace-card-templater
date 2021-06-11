@@ -149,16 +149,17 @@ console.info(
         this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
     	this._templateVariables = { 
     		user: {
+			id: this._hass.user.id,
     			name: this._hass.user.name, 
-				is_admin: this._hass.user.is_admin,
-				is_owner: this._hass.user.is_owner
-			},
-			page: {
-				...location,
-				path: location.pathname			
-			},
-			theme: this._hass.selectedTheme ? this._hass.selectedTheme : this._hass.themes.default_theme
-		};
+			is_admin: this._hass.user.is_admin,
+			is_owner: this._hass.user.is_owner
+		},
+		page: {
+			...location,
+			path: location.pathname			
+		},
+		theme: this._hass.selectedTheme ? this._hass.selectedTheme : this._hass.themes.default_theme
+	};
 		
         if(this.card)
         { 
