@@ -6,6 +6,7 @@ const TEMPLATER_CARD_VERSION = "0.0.9";
 import { LitElement, html, css } from "lit-element";
 import { createCard, createEntityRow } from "card-tools/src/lovelace-element";
 import { subscribeRenderTemplate } from "card-tools/src/templates";
+import { TemplateHandler } from "./templates.js"
 
 console.info(
   `%c  CARD-TEMPLATER  \n%c Version ${TEMPLATER_CARD_VERSION}  `,
@@ -20,6 +21,8 @@ console.info(
           throw new Error("Invalid configuration");
         this._config = config;
         this.refresh = true;
+        this.templateHandler = new TemplateHandler();
+        this.updatePending = false;
         
         if(config.entity) this.entity = config.entity;
         
@@ -36,13 +39,15 @@ console.info(
         this.isEntityRow = !!config.entity_row;
         
         if(config.card){
-        	this._cardConfig = this.getCardConfigWithoutTemplates(config.card);
+        	this._cardConfig = this.registerConfigTemplates(config.card);
         	this.card = createCard(this._cardConfig);
         }
         else{
-        	this._cardConfig = this.getCardConfigWithoutTemplates(config.entity_row);
+        	this._cardConfig = this.registerConfigTemplates(config.entity_row);
         	this.card = createEntityRow(this._cardConfig);
         }
+        
+        this.registerStateTemplates();
         
         this.yaml = require('yaml');
       }
@@ -56,7 +61,31 @@ console.info(
           ${this.card}
         `;
       }
-
+      
+      static get properties() { return {
+    	config: { type: Object },
+    	_hass: { type: Object },
+    	templateHandler: { type: Object }
+  		};
+  	  }
+	
+      updated(changedProps) {
+    	super.updated(changedProps);
+  	  }
+	  
+	  async connectedCallback() {
+    	super.connectedCallback();
+    	if(this.templateHandler){
+    		await this.templateHandler.subscribe();
+    	}
+  	  }
+  
+	  async disconnectedCallback() {
+	    if(this.templateHandler){
+    		await this.templateHandler.unsubscribe();
+    	}
+  	  }
+  	  
       processConfigEntities(entities) {
         if(!entities) return [];
         
@@ -87,19 +116,6 @@ console.info(
         return entityConf;
         });
     }
-
-    haveEntitiesChanged(){
-        for(const entityConf of this.entities) {
-          let oldState = this.oldStates[entityConf.entity];
-          if(oldState == null) oldState = {"state":"undefined"};
-
-          let newState = this._hass.states[entityConf.entity];
-          if(newState == null) newState = {"state":"undefined"};
-
-          if(newState != oldState) return true;
-        }
-        return false;
-      }
 	
 	 getMockedState(stateObj, state, attributes){
   		var newStateObj = {};
@@ -124,7 +140,7 @@ console.info(
             if(entityConf.state_template || entityConf.attributes) {
               let stateObj = this._hass.states[entityConf.entity];
               if(stateObj) {
-              	let state = entityConf.state_template ? await this.applyTemplate(entityConf.state_template) : null;
+              	let state = entityConf.state_template ? this.templateHandler.getTemplateResult(entityConf.state_template) : null;
               	let attributes = entityConf.attributes ? await this.getCardConfig(entityConf.attributes) : null;
               	let mockState = this.getMockedState(stateObj, state, attributes);
                 this._mockHass.states[entityConf.entity] = mockState;
@@ -133,6 +149,21 @@ console.info(
           }
         }
      }
+     
+     async registerStateTemplates() {
+     	let entity_ids = (this.entities && this.entities.map(i => i.entity).join()) || [];
+        for(const entityConf of this.entities) {
+        	if(entityConf.state_template || entityConf.attributes) {
+            	if(entityConf.state_template){
+              		this.templateHandler.registerTemplate(entityConf.state_template, this.templateVariables, entity_ids, () => { this.updatePending = true; });
+            	}
+            	if(entityConf.attributes){
+            		this.registerConfigTemplates(entityConf.attributes);
+            	}
+        	}
+    	}
+	}
+	
 
 	 set isPanel(isPanel){ 	
 	 	this._isPanel = isPanel;
@@ -147,7 +178,7 @@ console.info(
         this._mockHass = {};
         Object.assign(this._mockHass, hass);
         this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
-    	this._templateVariables = { 
+    	this.templateVariables = { 
     		user: {
     			name: this._hass.user.name, 
 				is_admin: this._hass.user.is_admin,
@@ -162,8 +193,9 @@ console.info(
 		
         if(this.card)
         { 
-          if(this.haveEntitiesChanged())
+          if(this.updatePending)
           {
+          	this.updatePending = false;
         	this.getCardConfig(this._config.card ? this._config.card : this._config.entity_row).then(config =>{
               this.applyStateTemplates().then(() => {
                   this._cardConfig = config;
@@ -195,50 +227,17 @@ console.info(
           }
         }
       }
-
-	  // Promisified wrapper around subscribeRenderTemplate to allow this to be called as an async function
-	  parseTemplate(template, variables){
- 		return new Promise((resolve, reject) => {
- 			let unsubRenderTemplate = subscribeRenderTemplate(null,
-       		async (result) => {
-         		resolve(result);
-       		},
-       		{template: template, variables: variables, 
-       		entity_ids: []}, false);
-       		let unsub = null;
-       		
-       		// Catch any errors and unsubscribe
-       		(async () => {
-      			try {
-        				unsub = await unsubRenderTemplate;
-        				await unsub();
-      			} catch (e) {
-        			reject(e.message);
-      			}
-    		})();
- 		});
-	  }
-	  
-      async applyTemplate(template){
-        try{
-        	var result = await this.parseTemplate(template, this._templateVariables);
-        	return result;
-        }
-        catch(err){
-          console.error("Error parsing template.", err);
-          console.log("Template", template);
-          return "Error!";
-        }
-      }
-
-      getCardConfigWithoutTemplates(rawConfig, topLevel = true){
+      
+      registerConfigTemplates(rawConfig, topLevel = true){
         var cardConfig = rawConfig instanceof Array ? [] : {};
-
+        let entity_ids = (this.entities && this.entities.map(i => i.entity).join()) || [];
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
             
             if(key.endsWith("_template")){
+                this.templateHandler.registerTemplate(value, this.templateVariables, entity_ids, () => { this.updatePending = true; });
+                
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(key == "entity"){
                   return null;
@@ -259,7 +258,7 @@ console.info(
             
             if(typeof value === "object"){
               let isArray = (value instanceof Array);  
-              value = this.getCardConfigWithoutTemplates(value, false);
+              value = this.registerConfigTemplates(value, false);
               
               if(isArray){
                 let new_value = [];
@@ -276,9 +275,7 @@ console.info(
                 value = new_value;
               }
             }
-
             
-
             if(value != null){
               cardConfig[key] = value;
             }
@@ -295,7 +292,7 @@ console.info(
         
         return cardConfig;
     }
-
+    
     async getCardConfig(rawConfig, topLevel = true){ 
         var cardConfig = rawConfig instanceof Array ? [] : {};
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
@@ -305,7 +302,8 @@ console.info(
             if(key.endsWith("_template")){
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(this._hass && value){
-                    value = await this.applyTemplate(value);
+                    value = this.templateHandler.getTemplateResult(value);
+                    
                     if(value == 'null' || value == 'None'){ 
                     	value = null;
                     }
