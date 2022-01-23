@@ -1,7 +1,7 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
-const TEMPLATER_CARD_VERSION = "0.1.0-alpha1";
+const TEMPLATER_CARD_VERSION = "0.1.0-alpha2";
 
 import { LitElement, html, css } from "lit-element";
 import { createCard, createEntityRow } from "card-tools/src/lovelace-element";
@@ -39,15 +39,28 @@ console.info(
         this.isEntityRow = !!config.entity_row;
         
         if(config.card){
-        	this._cardConfig = this.registerConfigTemplates(config.card);
+        	this._cardConfig = this.getCleanConfig(config.card);
         	this.card = createCard(this._cardConfig);
         }
         else{
-        	this._cardConfig = this.registerConfigTemplates(config.entity_row);
+        	this._cardConfig = this.getCleanConfig(config.entity_row);
         	this.card = createEntityRow(this._cardConfig);
         }
         
-        this.registerStateTemplates();
+        this.registeredTemplates = false;
+        
+        this.templateVariables = { 
+    		user: {
+    			name: null, 
+				is_admin: false,
+				is_owner: false
+			},
+			page: {
+				...location,
+				path: location.pathname			
+			},
+			theme: null
+		};
         
         this.yaml = require('yaml');
       }
@@ -150,15 +163,15 @@ console.info(
         }
      }
      
-     async registerStateTemplates() {
+     async registerStateTemplates(hass) {
      	let entity_ids = (this.entities && this.entities.map(i => i.entity).join()) || [];
         for(const entityConf of this.entities) {
         	if(entityConf.state_template || entityConf.attributes) {
             	if(entityConf.state_template){
-              		this.templateHandler.registerTemplate(entityConf.state_template, this.templateVariables, entity_ids, () => { this.updatePending = true; });
+              		this.templateHandler.registerTemplate(entityConf.state_template, this.templateVariables, entity_ids, () => { this.updatePending = true; }, hass.connection);
             	}
             	if(entityConf.attributes){
-            		this.registerConfigTemplates(entityConf.attributes);
+            		this.registerConfigTemplates(entityConf.attributes, hass);
             	}
         	}
     	}
@@ -167,6 +180,15 @@ console.info(
 
 	 set isPanel(isPanel){ 	
 	 	this._isPanel = isPanel;
+	 }
+	 
+	 updateTemplateVariables(){
+	 	this.templateVariables.user.name = this._hass.user.name;
+    	this.templateVariables.user.is_admin = this._hass.user.is_admin;
+    	this.templateVariables.user.is_owner = this._hass.user.is_owner;
+    	Object.assign(this.templateVariables.page, location);
+    	this.templateVariables.page.path = location.pathname;
+    	this.templateVariables.theme = this._hass.selectedTheme ? this._hass.selectedTheme : this._hass.themes.default_theme;
 	 }
 	 
      set hass(hass) {
@@ -178,18 +200,15 @@ console.info(
         this._mockHass = {};
         Object.assign(this._mockHass, hass);
         this._mockHass.states = JSON.parse(JSON.stringify(this._hass.states));
-    	this.templateVariables = { 
-    		user: {
-    			name: this._hass.user.name, 
-				is_admin: this._hass.user.is_admin,
-				is_owner: this._hass.user.is_owner
-			},
-			page: {
-				...location,
-				path: location.pathname			
-			},
-			theme: this._hass.selectedTheme ? this._hass.selectedTheme : this._hass.themes.default_theme
-		};
+    	
+    	this.updateTemplateVariables();
+    	
+    	if(!this.registeredTemplates){
+    		let rawConfig = this._config.card || this._config.entity_row;
+    		this.registerConfigTemplates(rawConfig, hass);
+    		this.registerStateTemplates(hass);
+    		this.registeredTemplates = true;
+    	}
 		
         if(this.card)
         { 
@@ -228,16 +247,13 @@ console.info(
         }
       }
       
-      registerConfigTemplates(rawConfig, topLevel = true){
+      getCleanConfig(rawConfig, topLevel = true) {
         var cardConfig = rawConfig instanceof Array ? [] : {};
-        let entity_ids = (this.entities && this.entities.map(i => i.entity).join()) || [];
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
             let key = original_key;
             let value = original_value;
             
             if(key.endsWith("_template")){
-                this.templateHandler.registerTemplate(value, this.templateVariables, entity_ids, () => { this.updatePending = true; });
-                
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(key == "entity"){
                   return null;
@@ -258,7 +274,7 @@ console.info(
             
             if(typeof value === "object"){
               let isArray = (value instanceof Array);  
-              value = this.registerConfigTemplates(value, false);
+              value = this.getCleanConfig(value, false);
               
               if(isArray){
                 let new_value = [];
@@ -293,6 +309,23 @@ console.info(
         return cardConfig;
     }
     
+    registerConfigTemplates(rawConfig, hass){
+        var cardConfig = rawConfig instanceof Array ? [] : {};
+        let entity_ids = (this.entities && this.entities.map(i => i.entity).join()) || [];
+        for (const [original_key, original_value] of Object.entries(rawConfig)) {
+            let key = original_key;
+            let value = original_value;
+            
+            if(key.endsWith("_template")){
+                this.templateHandler.registerTemplate(value, this.templateVariables, entity_ids, () => { this.updatePending = true; }, hass.connection);
+            }
+            
+            if(typeof value === "object"){
+              this.registerConfigTemplates(value, hass);
+            }
+        }
+    }
+    
     async getCardConfig(rawConfig, topLevel = true){ 
         var cardConfig = rawConfig instanceof Array ? [] : {};
         for (const [original_key, original_value] of Object.entries(rawConfig)) {
@@ -300,6 +333,7 @@ console.info(
             let value = original_value;
             
             if(key.endsWith("_template")){
+                
                 key = key.replace(/^(.*)_template$/,"$1");
                 if(this._hass && value){
                     value = this.templateHandler.getTemplateResult(value);

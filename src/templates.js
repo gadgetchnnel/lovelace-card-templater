@@ -2,17 +2,18 @@ import { subscribeRenderTemplate } from "card-tools/src/templates";
 
 class Template {
 	
-	constructor(template, variables, entity_ids, callback){
+	constructor(template, variables, entity_ids, callback, connection){
 		this.template = template;
 		this.variables = variables;
 		this.entity_ids = entity_ids;
 		this.subscribed = false;
 		this.callback = callback;
+		this.connection = connection;
 	}
 	
 	subscribe(){
  		try {
-      			this._unsubRenderTemplate = subscribeRenderTemplate(null, (result) => {
+      			this._unsubRenderTemplate = subscribeRenderTemplate(this.connection, (result) => {
           			this.templateResult = result;
           			if(this.callback) this.callback();
           			
@@ -53,10 +54,10 @@ export class TemplateHandler {
 		this.callback = callback;
 	}
 	
-	registerTemplate(template, variables, entity_ids, callback){
+	registerTemplate(template, variables, entity_ids, callback, connection){
 		let tpl = this.templates[template];
 		if(!tpl){
-        	tpl = new Template(template, variables, entity_ids, callback);
+        	tpl = new Template(template, variables, entity_ids, callback, connection);
         	this.templates[template] = tpl;
         }
         tpl.subscribe();
