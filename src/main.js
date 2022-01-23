@@ -1,7 +1,7 @@
 const complexSettings = ['entities', 'state_filter'];
 const entityCards = ['entities', 'glance'];
 
-const TEMPLATER_CARD_VERSION = "0.0.9";
+const TEMPLATER_CARD_VERSION = "0.1.0-alpha1";
 
 import { LitElement, html, css } from "lit-element";
 import { createCard, createEntityRow } from "card-tools/src/lovelace-element";
