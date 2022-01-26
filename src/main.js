@@ -195,7 +195,10 @@ console.info(
         this.oldStates = this._hass != null ? this._hass.states : {};
 
         this._hass = hass;
-        let mockedStates = this._mockHass ? this._mockHass.states : [];
+        
+        let mockedEntityIds = (this.entities && this.entities.filter(i => i.state_template || i.attributes).map(i => i.entity).join()) || [];
+        
+        let existingStates = this._mockHass ? this._mockHass.states : [];
         
         this._mockHass = {};
         Object.assign(this._mockHass, hass);
@@ -230,7 +233,7 @@ console.info(
           else{
             // Combine previously mocked states with any new state updates
             
-            var mockedKeys = Object.keys(mockedStates);
+            var mockedKeys = Object.keys(existingStates).filter(i => mockedEntityIds.includes(i));
             
             const newStates = Object.keys(this._mockHass.states)
   				.filter(key => !mockedKeys.includes(key))
@@ -238,10 +241,11 @@ console.info(
     				obj[key] = this._mockHass.states[key];
     				return obj;
   				}, {});
-  			
-            this._mockHass.states = { ...mockedStates,  ...newStates};
+            
+            this._mockHass.states = { ...existingStates,  ...newStates};
             this.card.isPanel = (this._isPanel == true);
             this.card.hass = this._mockHass;
+            
             this.requestUpdate();
           }
         }
