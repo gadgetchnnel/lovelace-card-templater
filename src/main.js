@@ -51,6 +51,7 @@ console.info(
         
         this.templateVariables = { 
     		user: {
+    			id: null,
     			name: null, 
 				is_admin: false,
 				is_owner: false
@@ -183,6 +184,7 @@ console.info(
 	 }
 	 
 	 updateTemplateVariables(){
+	 	this.templateVariables.user.id = this._hass.user.id;
 	 	this.templateVariables.user.name = this._hass.user.name;
     	this.templateVariables.user.is_admin = this._hass.user.is_admin;
     	this.templateVariables.user.is_owner = this._hass.user.is_owner;
