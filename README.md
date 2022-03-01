@@ -137,11 +137,11 @@ Attributes of entities can also be templated like this:
       ...
     entities:
       - entity: sensor.my_sensor
-         state_template: >
+        state_template: >
            {{ "One" if states.sensor.my_sensor.state == "1" else "Not One" }}
-         attributes:
-           unit_of_measurement_template: >
-             {{ states.sensor.my_sensor_uom.state }}
+        attributes:
+          unit_of_measurement_template: >
+            {{ states.sensor.my_sensor_uom.state }}
              
 This can be done with or without the **state_template** being defined, so you can do this:
 
@@ -178,7 +178,7 @@ The following variables are passed to the templating engine so you can use them 
     type: 'custom:card-templater'
     card:
       type: markdown
-      content_template >
+      content_template: >
         ## Hello {{ user.name }}
         This card is on the page {{ page.path }}
     entities:
