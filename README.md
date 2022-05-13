@@ -1,11 +1,11 @@
 # lovelace-card-templater
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
 Custom Lovelace card which allows Jinja2 templates to be applied to other cards
 
 ## Installation
 
-This card can either be installed using [HACS](https://github.com/custom-components/hacs) or manually.
+This card can either be installed using [HACS](https://github.com/hacs/integration) or manually.
 
 ### With HACS
 Search for "Lovelace Card Templater" in the store and follow the instructions
