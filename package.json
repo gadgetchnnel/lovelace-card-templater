@@ -21,7 +21,7 @@
   "dependencies": {
     "card-tools": "github:thomasloven/lovelace-card-tools",
     "custom-card-helpers": "^1.4.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "yaml": "^1.8.0"
   },
   "main": "webpack.config.js",
